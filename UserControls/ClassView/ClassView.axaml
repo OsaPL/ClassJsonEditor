@@ -1,0 +1,42 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:ClassJsonEditor.UserControls"
+             xmlns:converters="clr-namespace:ClassJsonEditor.Assets.Converters"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ClassJsonEditor.UserControls.ClassView">
+    <UserControl.Resources>
+        <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter" />
+    </UserControl.Resources>
+    <TreeView Items="{Binding Items}" SelectionChanged="TreeView_OnSelectionChanged">
+        <TreeView.ItemTemplate   >
+            <TreeDataTemplate DataType="{x:Type models:ClassViewTreeItem}" ItemsSource="{Binding Items}"  >
+                <StackPanel Orientation="Horizontal" >
+                    <TextBox Text="{Binding FieldName}" IsVisible="{Binding Parent.IsCollection}" KeyDown="FieldTextBox_KeyDown" />
+                    <TextBlock Text="{Binding FieldName}" FontWeight="{Binding IsPrimitive, Converter={StaticResource BoolToFontWeightConverter}}"  />
+                    <TextBlock Text=" : " FontWeight="{Binding IsPrimitive, Converter={StaticResource BoolToFontWeightConverter}}"/>
+                    <TextBlock Text="{Binding Type}" FontWeight="{Binding IsPrimitive, Converter={StaticResource BoolToFontWeightConverter}}"/>
+                    <TextBlock Text=" : " IsVisible="{Binding IsPrimitive}"  />
+                    <TextBox Text="{Binding Objecto, Mode=OneWay}"  KeyDown="ValueTextBox_KeyDown">
+                        <TextBox.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="!IsEnum" />
+                                <Binding Path="IsPrimitive" />
+                            </MultiBinding>
+                        </TextBox.IsVisible>
+                    </TextBox>
+                    <ComboBox IsVisible="{Binding IsEnum}" Items="{Binding Enums}" SelectedIndex="0" SelectionChanged="EnumComboBox_OnSelectionChanged">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate >
+                                <TextBlock Text="{Binding Path=.}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="Init" IsVisible="{Binding IsNull}" Margin="5,0" Click="Init_Button_Click"/>
+                    <Button Content="Add" IsVisible="{Binding IsCollection}" Margin="5,0" Click="Add_Button_Click"/>
+                </StackPanel>
+            </TreeDataTemplate>
+        </TreeView.ItemTemplate>      
+    </TreeView>
+</UserControl>

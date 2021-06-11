@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ClassJsonEditor.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:usrctrl="clr-namespace:ClassJsonEditor.UserControls"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="ClassJsonEditor.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="ClassJsonEditor">
+
+    <!-- xmlns:objecttree="clr-namespace:.ObjectTree" -->
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+    
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="0.5*,*,*" > 
+        <ScrollViewer Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Hidden" Grid.RowSpan="2">
+            <usrctrl:ClassList DataContext="{Binding List}"></usrctrl:ClassList> 
+        </ScrollViewer>
+        <ScrollViewer Grid.Row="0" Grid.Column="1" VerticalScrollBarVisibility="Hidden" Grid.RowSpan="2">
+            <usrctrl:ClassView DataContext="{Binding Classes}"/>
+        </ScrollViewer>
+        <TextBlock
+            Grid.Row="0" Grid.Column="2" 
+            Text="{Binding Selected}" />
+        <TextBox
+            Grid.Row="1" Grid.Column="2" 
+            Text="{Binding Example}" 
+            AcceptsReturn="True" 
+            IsReadOnly="False"/>
+        <!-- <objecttree:ObjectTree x:Name="Treeviewer" Margin="110,0,425,10" SelectedItemChanged="Treeviewer_SelectedItemChanged"></objecttree:ObjectTree> -->
+    </Grid>
+    
+</Window>
