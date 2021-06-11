@@ -63,7 +63,7 @@ namespace ClassJsonEditor.UserControls
             get => _objecto;
             set
             {
-                if (value?.GetType() != Type && typeof(string) != Type)
+                if ((value?.GetType() != Type && typeof(string) != Type) && (IsPrimitive && value is null))
                     throw new NotSupportedException("Objecto type is different than type already set!");
 
                 this.RaiseAndSetIfChanged(ref _objecto, value);
@@ -111,6 +111,21 @@ namespace ClassJsonEditor.UserControls
                 return _enums;
             }
             private set { this.RaiseAndSetIfChanged(ref _enums, value); }
+        }
+        
+        public bool IsBool
+        {
+            get
+            {
+                if (Objecto == null)
+                {
+                    return false;
+                }
+
+                var result = Objecto is bool;
+
+                return result;
+            }
         }
 
         public bool IsCollection

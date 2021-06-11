@@ -28,7 +28,7 @@ namespace ClassJsonEditor.ViewModels
             string[] list = new[]
             {
                 @"E:\Steam\steamapps\common\H3VR\h3vr_Data\Managed\Assembly-CSharp.dll",
-                @"C:\Users\Osa-Master\RiderProjects\metalmercs\ClassJsonEditor\DummyLib.dll"
+                @"C:\Users\Osa-Master\RiderProjects\ClassJsonEditor\DummyLib.dll"
             };
 
             // LoadFrom also loads all dependecies

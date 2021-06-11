@@ -62,7 +62,7 @@ namespace ClassJsonEditor.UserControls
             {
                 ClassViewTreeItem @enum = ((sender as ComboBox)?.DataContext as ClassViewTreeItem);
                 @enum.Objecto = t;
-                if (! @enum.Parent.IsPrimitive)
+                if (!@enum.Parent.IsPrimitive)
                 {
                     _context.OnSelect(@enum.Parent.GetAsObject());
                 }
@@ -77,6 +77,33 @@ namespace ClassJsonEditor.UserControls
                 if (!t.IsPrimitive)
                 {
                     _context.OnSelect(t.GetAsObject());
+                }
+            }
+        }
+
+        private void ToggleButton_OnChecked(object? sender, RoutedEventArgs e)
+        {
+            
+            ClassViewTreeItem @bool = ((sender as CheckBox)?.DataContext as ClassViewTreeItem);
+            if (@bool.Type == typeof(bool))
+            {
+                @bool.Objecto = true;
+                if (!@bool.Parent.IsPrimitive)
+                {
+                    _context.OnSelect(@bool.Parent.GetAsObject());
+                }
+            }
+        }
+
+        private void ToggleButton_OnUnchecked(object? sender, RoutedEventArgs e)
+        {
+            ClassViewTreeItem @bool = ((sender as CheckBox)?.DataContext as ClassViewTreeItem);
+            if (@bool.Type == typeof(bool))
+            {
+                @bool.Objecto = false;
+                if (!@bool.Parent.IsPrimitive)
+                {
+                    _context.OnSelect(@bool.Parent.GetAsObject());
                 }
             }
         }
