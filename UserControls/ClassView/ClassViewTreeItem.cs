@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Dynamic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
@@ -67,6 +68,11 @@ namespace ClassJsonEditor.UserControls
                     throw new NotSupportedException("Objecto type is different than type already set!");
 
                 this.RaiseAndSetIfChanged(ref _objecto, value);
+                this.RaisePropertyChanged(nameof(IsNull));
+                this.RaisePropertyChanged(nameof(IsCollection));
+                this.RaisePropertyChanged(nameof(IsPrimitive));
+                this.RaisePropertyChanged(nameof(IsBool));
+                this.RaisePropertyChanged(nameof(IsEnum));
             }
         }
 
@@ -141,20 +147,7 @@ namespace ClassJsonEditor.UserControls
             }
         }
 
-        public bool IsNull
-        {
-            get
-            {
-                if (Objecto == null)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        }
+        public bool IsNull => Objecto == null;
 
         #endregion
 
@@ -240,35 +233,15 @@ namespace ClassJsonEditor.UserControls
         {
             if (IsPrimitive)
                 return Objecto;
-            
-            object obj = PrepareGetAsObject();
-            string str = Serializer.Serialize(obj, false, true);
-            //string pattern = "((\"\\w+\"): {\\n\\s *\\2:\\s *.*\\n\\s *})";
-            //string pattern = @"(([^{""]*""[a-zA-Z0-9]+.*""):{\2:([^}]+)})";
-            string pattern = @"(""([^""]*)""\s*:\s*{""\2""\s*:(\s*""?[a-zA-Z0-9-_.,]+""?)})";
 
-            //replace whole match with "\""+C2+"\""+":"+"\""+C3+"\"
-            var maczer = Regex.Match(str, pattern);
-            var newstr = Regex.Replace(str, pattern, m => string.Format(
-                @"""{0}"":{1}",
-                m.Groups[2].Value,
-                m.Groups[3].Value));
-
-            var tmp = JsonConvert.DeserializeObject(newstr);
-
-            var settings = new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                MissingMemberHandling = MissingMemberHandling.Ignore
-            };
-            var temp = JsonConvert.DeserializeObject(Serializer.Serialize(tmp, true, true), Type, settings);
-
-            return temp;
+            ExpandoObject? obj = new ExpandoObject();
+            PrepareGetAsObject(ref obj);
+            return obj;
         }
 
-        private object PrepareGetAsObject()
+        private void PrepareGetAsObject(ref ExpandoObject? expando)
         {
-            dynamic expando = new ExpandoObject();
+            expando ??= new ExpandoObject();
             string serialized = string.Empty;
             if (Items != null)
             {
@@ -276,15 +249,7 @@ namespace ClassJsonEditor.UserControls
                 {
                     foreach (ClassViewTreeItem item in Items)
                     {
-                        var obj = item.PrepareGetAsObject();
-                        if (obj == null)
-                        {
-                            AddProperty(expando, item.FieldName, null);
-                        }
-                        else
-                        {
-                            AddProperty(expando, item.FieldName, obj);
-                        }
+                        item.PrepareGetAsObject(ref expando);
                     }
                 }
                 else
@@ -310,8 +275,6 @@ namespace ClassJsonEditor.UserControls
                     AddProperty(expando, FieldName, Objecto);
                 }
             }
-
-            return expando;
         }
 
         public static void AddProperty(ExpandoObject expando, string propertyName, object propertyValue)
@@ -347,6 +310,32 @@ namespace ClassJsonEditor.UserControls
 
                 string str = Regex.Replace(Objecto.ToString(), @"\s+", "");
                 return FieldName + " : " + Type + " : " + str;
+            }
+        }
+    }
+    
+    public static class ReflectionsHelper
+    {
+        public static IEnumerable<Type> GetCompatibleTypes(Type type)
+        {
+            var types = Assembly.GetAssembly(type).GetLoadableTypes().Where(x=> x.IsAssignableTo(type));
+            //TODO! Get hold of all assemblies 
+
+            return types;
+        }
+        
+        public static IEnumerable<Type> GetLoadableTypes(this Assembly assembly) 
+        {
+            if (assembly == null) 
+                throw new ArgumentNullException("assembly");
+            
+            try 
+            {
+                return assembly.GetTypes();
+            } 
+            catch (ReflectionTypeLoadException e) 
+            {
+                return e.Types.Where(t => t != null);
             }
         }
     }

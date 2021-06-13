@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
 using ClassJsonEditor.Models;
+using ClassJsonEditor.UserControls;
 using MercsCodeBaseTest;
 using ReactiveUI;
 
@@ -33,6 +34,9 @@ namespace ClassJsonEditor.ViewModels
 
             // LoadFrom also loads all dependecies
             var DLL = Assembly.LoadFrom(list[1]);
+
+            var test = DLL.GetType("MetalMercs.Equipment");
+            var res = ReflectionsHelper.GetCompatibleTypes(test);
             
             // ReflectionOnlyLoadFrom load an assembly into the reflection-only context. Assemblies loaded into this context can be examined but not executed!
             // Doesnt work in .net core, and System.Reflection.TypeLoader/Metadata is in development hell it seems, bummer

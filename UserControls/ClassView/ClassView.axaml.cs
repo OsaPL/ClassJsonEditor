@@ -47,12 +47,21 @@ namespace ClassJsonEditor.UserControls
 
         private void Init_Button_Click(object? sender, RoutedEventArgs e)
         {
-            throw new System.NotImplementedException();
+            var nullable = ((sender as Button)?.DataContext as ClassViewTreeItem);
+            nullable.Objecto = Activator.CreateInstance(nullable.Type);
+            if (!@nullable.Parent.IsPrimitive)
+            {
+                _context.OnSelect(@nullable.Parent.GetAsObject());
+            }
         }
 
         private void Add_Button_Click(object? sender, RoutedEventArgs e)
         {
-            throw new System.NotImplementedException();
+            var collectionItem = ((sender as Button)?.DataContext as ClassViewTreeItem);
+            
+            Type[] arguments = collectionItem.Type.GetGenericArguments();
+            Type keyType = arguments[0];
+            Type valueType = arguments[1];
         }
 
         private void EnumComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
