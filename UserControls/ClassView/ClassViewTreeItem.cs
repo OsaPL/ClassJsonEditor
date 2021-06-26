@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Globalization;
@@ -118,7 +119,7 @@ namespace ClassJsonEditor.UserControls
             }
             private set { this.RaiseAndSetIfChanged(ref _enums, value); }
         }
-        
+
         public bool IsBool
         {
             get
@@ -134,7 +135,7 @@ namespace ClassJsonEditor.UserControls
             }
         }
 
-        public bool IsCollection
+        public bool IsDict
         {
             get
             {
@@ -147,9 +148,42 @@ namespace ClassJsonEditor.UserControls
             }
         }
 
+        public bool IsCollection
+        {
+            get
+            {
+                if (Objecto == null)
+                {
+                    return false;
+                }
+
+                return TypeChecker.IsCollection(this.Type);
+            }
+        }
+
         public bool IsNull => Objecto == null;
 
         #endregion
+        
+        public ClassViewTreeItem GetTopMostParent()
+        {
+            ClassViewTreeItem topMost;
+            //TODO! This should call the top most
+            if (this.Parent != null)
+            {
+                topMost = this.Parent;
+                while (topMost.Parent != null)
+                {
+                    topMost = topMost.Parent;
+                }
+            }
+            else
+            {
+                topMost = this;
+            }
+
+            return topMost;
+        }
 
         public void Parse()
         {
@@ -158,69 +192,84 @@ namespace ClassJsonEditor.UserControls
                 return;
             Items.Clear();
             //check if we can just do IDictionary on it
-            dynamic enumerable = Objecto as System.Collections.IDictionary;
+            dynamic dictionary = Objecto as System.Collections.IDictionary;
 
-            if (enumerable != null)
+            if (dictionary != null)
             {
-                foreach (dynamic item in enumerable)
+                foreach (dynamic item in dictionary)
                 {
-                    var child = new ClassViewTreeItem(item.Key, item.Value.GetType(), item.Value);
+                    ClassViewTreeItem child = new ClassViewTreeItem(item.Key, item.Value.GetType(), item.Value);
 
-                    if (TypeChecker.IsReallyPrimitive(item.Value.GetType()))
-                    {
-                        child = new ClassViewTreeItem(item.Key, item.Value.GetType(), item.Value);
-                        Items.Add(child);
-                    }
-                    else
+                    Items.Add(child);
+                    if (!TypeChecker.IsReallyPrimitive(item.Value.GetType()))
                     {
                         child.Parse();
-                        Items.Add(child);
                     }
                 }
             }
             else
             {
-                if (!TypeChecker.IsReallyPrimitive(Objecto))
+                var collection = Objecto as System.Collections.ICollection;
+                if (collection != null)
                 {
-                    var type = Objecto.GetType();
-                    // Need to check if the type is actually a type or a RuntimeType
-                    List<object> fieldValues = type
-                        .GetFields()
-                        .Select(field => field.GetValue(Objecto))
-                        .ToList();
-
-                    List<string> fieldnames = type
-                        .GetFields()
-                        .Select(field => field.Name)
-                        .ToList();
-                    List<Type> fieldTypes = Type
-                        .GetFields()
-                        .Select(field => field.FieldType)
-                        .ToList();
-
-                    using (var e1 = fieldValues.GetEnumerator())
-                    using (var e2 = fieldnames.GetEnumerator())
-                    using (var e3 = fieldTypes.GetEnumerator())
+                    int i = 0;
+                    foreach(var item in collection)
                     {
-                        while (e1.MoveNext() && e2.MoveNext() && e3.MoveNext())
+                        ClassViewTreeItem child = new ClassViewTreeItem(i.ToString(), item.GetType(), item);
+
+                        Items.Add(child);
+                        if (!TypeChecker.IsReallyPrimitive(item.GetType()))
                         {
-                            var item1 = e1.Current;
-                            var item2 = e2.Current;
-                            var item3 = e3.Current;
+                            child.Parse();
+                        }
 
-                            var child = new ClassViewTreeItem(item2, item3, item1);
+                        i++;
+                    }
+                }
+                else
+                {
+                    if (!TypeChecker.IsReallyPrimitive(Objecto))
+                    {
+                        var type = Objecto.GetType();
+                        // Need to check if the type is actually a type or a RuntimeType
+                        List<object> fieldValues = type
+                            .GetFields()
+                            .Select(field => field.GetValue(Objecto))
+                            .ToList();
 
-                            if (TypeChecker.IsReallyPrimitive(item3))
+                        List<string> fieldnames = type
+                            .GetFields()
+                            .Select(field => field.Name)
+                            .ToList();
+                        List<Type> fieldTypes = Type
+                            .GetFields()
+                            .Select(field => field.FieldType)
+                            .ToList();
+
+                        using (var e1 = fieldValues.GetEnumerator())
+                        using (var e2 = fieldnames.GetEnumerator())
+                        using (var e3 = fieldTypes.GetEnumerator())
+                        {
+                            while (e1.MoveNext() && e2.MoveNext() && e3.MoveNext())
                             {
-                                Items.Add(child);
-                            }
-                            else
-                            {
-                                child.Parse();
-                                Items.Add(child);
-                            }
+                                var item1 = e1.Current;
+                                var item2 = e2.Current;
+                                var item3 = e3.Current;
 
-                            //create new treeitems
+                                var child = new ClassViewTreeItem(item2, item3, item1);
+
+                                if (TypeChecker.IsReallyPrimitive(item3))
+                                {
+                                    Items.Add(child);
+                                }
+                                else
+                                {
+                                    child.Parse();
+                                    Items.Add(child);
+                                }
+
+                                //create new treeitems
+                            }
                         }
                     }
                 }
@@ -241,7 +290,11 @@ namespace ClassJsonEditor.UserControls
 
         private void PrepareGetAsObject(ref ExpandoObject? expando)
         {
-            expando ??= new ExpandoObject();
+            if(expando == null)
+            {
+                throw new NoNullAllowedException();
+            }
+
             string serialized = string.Empty;
             if (Items != null)
             {
@@ -249,31 +302,23 @@ namespace ClassJsonEditor.UserControls
                 {
                     foreach (ClassViewTreeItem item in Items)
                     {
-                        item.PrepareGetAsObject(ref expando);
-                    }
-                }
-                else
-                {
-                    if (Objecto == null)
-                    {
-                        AddProperty(expando, FieldName, null);
-                    }
-                    else
-                    {
-                        AddProperty(expando, FieldName, Objecto);
+                        
+                        if (item.IsPrimitive)
+                        {
+                            AddProperty(expando, item.FieldName, item.Objecto);
+                        }
+                        else
+                        {
+                            var newExpando = new ExpandoObject();
+                            AddProperty(expando, item.FieldName, item.Objecto);
+                            item.PrepareGetAsObject(ref newExpando);
+                        }
                     }
                 }
             }
             else
             {
-                if (Objecto == null)
-                {
-                    AddProperty(expando, FieldName, null);
-                }
-                else
-                {
-                    AddProperty(expando, FieldName, Objecto);
-                }
+                throw new NotSupportedException();
             }
         }
 
@@ -313,29 +358,52 @@ namespace ClassJsonEditor.UserControls
             }
         }
     }
-    
+
     public static class ReflectionsHelper
     {
         public static IEnumerable<Type> GetCompatibleTypes(Type type)
         {
-            var types = Assembly.GetAssembly(type).GetLoadableTypes().Where(x=> x.IsAssignableTo(type));
+            var types = Assembly.GetAssembly(type).GetLoadableTypes().Where(x => x.IsAssignableTo(type));
             //TODO! Get hold of all assemblies 
 
             return types;
         }
-        
-        public static IEnumerable<Type> GetLoadableTypes(this Assembly assembly) 
+
+        public static IEnumerable<Type> GetLoadableTypes(this Assembly assembly)
         {
-            if (assembly == null) 
+            if (assembly == null)
                 throw new ArgumentNullException("assembly");
-            
-            try 
+
+            try
             {
                 return assembly.GetTypes();
-            } 
-            catch (ReflectionTypeLoadException e) 
+            }
+            catch (ReflectionTypeLoadException e)
             {
                 return e.Types.Where(t => t != null);
+            }
+        }
+
+        //TODO! Replace all usages of Activator.CreateInstance() with this!
+        public static object ActivateInstance(this Type type)
+        {
+            var t = typeof(ReflectionsHelper);
+            var met = t.GetMethods();
+            var sel = met.Single(x => x.Name == nameof(ActivateInstance) && x.IsGenericMethod);
+            var gen = sel.MakeGenericMethod(type);
+
+            return gen.Invoke(null, new object?[] {null});
+        }
+
+        public static T ActivateInstance<T>(this T obj)
+        {
+            if (typeof(T).IsValueType || typeof(T) == typeof(string))
+            {
+                return default(T);
+            }
+            else
+            {
+                return Activator.CreateInstance<T>();
             }
         }
     }

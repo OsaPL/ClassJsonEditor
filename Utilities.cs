@@ -315,21 +315,6 @@ namespace MercsCodeBaseTest
             return result;
         }
 
-        public static List<Type> FindDerivedTypes(Assembly assembly, Type baseType, string ournamespace)
-        {
-            var list = TypeChecker.GetTypesInNamespace(assembly, ournamespace);
-            List<Type> types = new List<Type>();
-            foreach (Type typeinnamespace in list)
-            {
-                if (baseType.IsAssignableFrom(typeinnamespace))
-                {
-                    types.Add(typeinnamespace);
-                }
-            }
-
-            return types;
-        }
-
         //TODO! Use this when checking for a list 
         public static bool IsNullOrEmpty<T>(this IEnumerable<T> enumerable)
         {
@@ -363,6 +348,14 @@ namespace MercsCodeBaseTest
                 assembly.GetTypes()
                     .Where(t => String.Equals(t.Namespace, nameSpace, StringComparison.Ordinal))
                     .ToArray();
+        }
+
+        public static bool IsCollection(Type o)
+        {
+            bool result = o.GetInterfaces()
+                .Where(i => i.IsGenericType)
+                .Any(i => i.GetGenericTypeDefinition() == typeof(ICollection<>));
+            return result;
         }
     }
 
@@ -481,6 +474,7 @@ namespace MercsCodeBaseTest
         public static string Serialize(object ourobject, bool pretty = false, bool full = false)
         {
             JsonSerializerSettings setting;
+            
             if (full)
             {
                 setting = new JsonSerializerSettings
@@ -497,7 +491,8 @@ namespace MercsCodeBaseTest
                     DefaultValueHandling = DefaultValueHandling.Ignore,
                 };
             }
-
+            
+            setting.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
 
             string serialized = string.Empty;
 

@@ -13,7 +13,7 @@
         <TreeView.ItemTemplate   >
             <TreeDataTemplate DataType="{x:Type models:ClassViewTreeItem}" ItemsSource="{Binding Items}"  >
                 <StackPanel Orientation="Horizontal" >
-                    <TextBox Text="{Binding FieldName}" IsVisible="{Binding Parent.IsCollection}" KeyDown="FieldTextBox_KeyDown" />
+                    <TextBox Text="{Binding FieldName}" IsVisible="{Binding Parent.IsDict}" KeyDown="FieldTextBox_KeyDown" />
                     <TextBlock Text="{Binding FieldName}" FontWeight="{Binding IsPrimitive, Converter={StaticResource BoolToFontWeightConverter}}"  />
                     <TextBlock Text=" : " FontWeight="{Binding IsPrimitive, Converter={StaticResource BoolToFontWeightConverter}}"/>
                     <TextBlock Text="{Binding Type}" FontWeight="{Binding IsPrimitive, Converter={StaticResource BoolToFontWeightConverter}}"/>

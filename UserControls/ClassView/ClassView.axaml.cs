@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -49,19 +53,61 @@ namespace ClassJsonEditor.UserControls
         {
             var nullable = ((sender as Button)?.DataContext as ClassViewTreeItem);
             nullable.Objecto = Activator.CreateInstance(nullable.Type);
-            if (!@nullable.Parent.IsPrimitive)
-            {
-                _context.OnSelect(@nullable.Parent.GetAsObject());
-            }
+            nullable.Parse();
+
+            _context.OnSelect(nullable.GetTopMostParent().GetAsObject());
         }
 
-        private void Add_Button_Click(object? sender, RoutedEventArgs e)
+        private async void Add_Button_Click(object? sender, RoutedEventArgs e)
         {
             var collectionItem = ((sender as Button)?.DataContext as ClassViewTreeItem);
-            
-            Type[] arguments = collectionItem.Type.GetGenericArguments();
-            Type keyType = arguments[0];
-            Type valueType = arguments[1];
+
+            if (collectionItem.IsDict)
+            {
+                throw new NotSupportedException("Dict support is a big one");
+                // //TODO: Find out a better way, Im assuming all dicts will have their 1st generic argument the type of the key, and second the value type
+                // Type[] arguments = collectionItem.Type.GetGenericArguments();
+                // Type key = arguments[0];
+                // var keyTypes = ReflectionsHelper.GetCompatibleTypes(key);
+                //
+                // Type value = arguments[1];
+                // var valueTypes = ReflectionsHelper.GetCompatibleTypes(value);
+                //
+                // if (Avalonia.Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                // {
+                //     var selectBox1 = new SelectListMsgBox() {Title = "Select Key Type..."};
+                //     var selectedKey = await selectBox1.ShowListBox(desktop.MainWindow, keyTypes);
+                //     var selectBox2 = new SelectListMsgBox(){Title = "Select Value Type..."};
+                //     var selectedValue = await selectBox2.ShowListBox(desktop.MainWindow, valueTypes);
+                //     
+                //     //TODO! This WILL CRASH for string cause default(string) is null
+                //     (collectionItem.Objecto as IDictionary).Add(((Type)selectedKey).ActivateInstance(),((Type)selectedValue).ActivateInstance());
+                //     collectionItem.Parse();
+                //     if (!@collectionItem.Parent.IsPrimitive)
+                //     {
+                //         //TODO! This should call the top most
+                //         _context.OnSelect(@collectionItem.Parent.GetAsObject());
+                //     }
+                // }
+            }
+            else if (collectionItem.IsCollection)
+            {
+                //TODO: Find out a better way, Im assuming all collections will have their 1st generic argument the type of the items
+                Type argument = collectionItem.Type.GetGenericArguments()[1];
+                var types = ReflectionsHelper.GetCompatibleTypes(argument);
+                if (Avalonia.Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    var selectBox = new SelectListMsgBox() {Title = "Select Element Type..."};
+                    var selected = await selectBox.ShowListBox(desktop.MainWindow, types);
+                    var newObj = (selected as Type).ActivateInstance();
+
+                    // Doing some reflection magic, to be able to call Add (ICollection doesnt implement Add, yet ICollection<T> does, that why I dont just do `as ICollection` cast
+                    collectionItem.Type.GetMethod("Add").Invoke(collectionItem.Objecto, new[] {newObj});
+                    collectionItem.Parse();
+                    
+                    _context.OnSelect(collectionItem.GetTopMostParent().GetAsObject());
+                }
+            }
         }
 
         private void EnumComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -71,10 +117,7 @@ namespace ClassJsonEditor.UserControls
             {
                 ClassViewTreeItem @enum = ((sender as ComboBox)?.DataContext as ClassViewTreeItem);
                 @enum.Objecto = t;
-                if (!@enum.Parent.IsPrimitive)
-                {
-                    _context.OnSelect(@enum.Parent.GetAsObject());
-                }
+                _context.OnSelect(@enum.GetTopMostParent().GetAsObject());
             }
         }
 
@@ -83,37 +126,20 @@ namespace ClassJsonEditor.UserControls
             var t = e.AddedItems.First<ClassViewTreeItem>();
             if (t != null)
             {
-                if (!t.IsPrimitive)
-                {
-                    _context.OnSelect(t.GetAsObject());
-                }
+                _context.OnSelect(t.GetTopMostParent().GetAsObject());
             }
         }
 
-        private void ToggleButton_OnChecked(object? sender, RoutedEventArgs e)
-        {
-            
-            ClassViewTreeItem @bool = ((sender as CheckBox)?.DataContext as ClassViewTreeItem);
-            if (@bool.Type == typeof(bool))
-            {
-                @bool.Objecto = true;
-                if (!@bool.Parent.IsPrimitive)
-                {
-                    _context.OnSelect(@bool.Parent.GetAsObject());
-                }
-            }
-        }
+        private void ToggleButton_OnChecked(object? sender, RoutedEventArgs e) => SetBooleanValue(sender, e, true);
+        private void ToggleButton_OnUnchecked(object? sender, RoutedEventArgs e) => SetBooleanValue(sender, e, false);
 
-        private void ToggleButton_OnUnchecked(object? sender, RoutedEventArgs e)
+        private void SetBooleanValue(object? sender, RoutedEventArgs e, bool bValue)
         {
             ClassViewTreeItem @bool = ((sender as CheckBox)?.DataContext as ClassViewTreeItem);
             if (@bool.Type == typeof(bool))
             {
-                @bool.Objecto = false;
-                if (!@bool.Parent.IsPrimitive)
-                {
-                    _context.OnSelect(@bool.Parent.GetAsObject());
-                }
+                @bool.Objecto = bValue;
+                _context.OnSelect(@bool.GetTopMostParent().GetAsObject());
             }
         }
     }
