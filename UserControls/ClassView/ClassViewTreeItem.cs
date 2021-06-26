@@ -164,7 +164,7 @@ namespace ClassJsonEditor.UserControls
         public bool IsNull => Objecto == null;
 
         #endregion
-        
+
         public ClassViewTreeItem GetTopMostParent()
         {
             ClassViewTreeItem topMost;
@@ -213,7 +213,7 @@ namespace ClassJsonEditor.UserControls
                 if (collection != null)
                 {
                     int i = 0;
-                    foreach(var item in collection)
+                    foreach (var item in collection)
                     {
                         ClassViewTreeItem child = new ClassViewTreeItem(i.ToString(), item.GetType(), item);
 
@@ -290,7 +290,7 @@ namespace ClassJsonEditor.UserControls
 
         private void PrepareGetAsObject(ref ExpandoObject? expando)
         {
-            if(expando == null)
+            if (expando == null)
             {
                 throw new NoNullAllowedException();
             }
@@ -302,7 +302,6 @@ namespace ClassJsonEditor.UserControls
                 {
                     foreach (ClassViewTreeItem item in Items)
                     {
-                        
                         if (item.IsPrimitive)
                         {
                             AddProperty(expando, item.FieldName, item.Objecto);
