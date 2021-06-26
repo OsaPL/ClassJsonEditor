@@ -310,7 +310,7 @@ namespace ClassJsonEditor.UserControls
                         else
                         {
                             var newExpando = new ExpandoObject();
-                            AddProperty(expando, item.FieldName, item.Objecto);
+                            AddProperty(expando, item.FieldName, newExpando);
                             item.PrepareGetAsObject(ref newExpando);
                         }
                     }
