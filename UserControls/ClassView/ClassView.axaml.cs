@@ -12,8 +12,11 @@ using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ClassJsonEditor.ViewModels;
+using MercsCodeBaseTest;
 using static ClassJsonEditor.AvaloniaHelpers;
 
 namespace ClassJsonEditor.UserControls
@@ -40,12 +43,49 @@ namespace ClassJsonEditor.UserControls
             throw new System.NotImplementedException();
         }
 
+        private IBrush _oldBrush;
+
         private void ValueTextBox_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                //Validate
-                //throw new System.NotImplementedException();
+                var textBox = sender as TextBox;
+                var objItem = textBox?.DataContext as ClassViewTreeItem;
+                var newVal = Serializer.Deserialize(textBox?.Text, objItem.Type);
+                if (newVal != null)
+                {
+                    Dispatcher.UIThread.Post(new Action(async () =>
+                    {
+                        var currentBrush = textBox.Foreground.ToImmutable();
+                        textBox.Foreground = new SolidColorBrush(Colors.Green);
+
+                        await Task.Delay(4000);
+                        // Field is being `fixed` by the user, rever to the pre-broken state
+                        if (_oldBrush != null)
+                        {
+                            textBox.Foreground = _oldBrush;
+                            _oldBrush = null;
+                        }
+                        else
+                        {
+                            textBox.Foreground = currentBrush;
+                        }
+                    }));
+
+                    textBox.Parent.Focus();
+                    objItem.Objecto = newVal;
+                    objItem.Parse();
+                    
+                    _context.OnSelect(objItem.GetTopMostParent().GetAsObject());
+                }
+                else
+                {
+                    Dispatcher.UIThread.Post(new Action(async () =>
+                    {
+                        _oldBrush = textBox.Foreground.ToImmutable();
+                        textBox.Foreground = new SolidColorBrush(Colors.Red);
+                    }));
+                }
             }
         }
 
@@ -98,8 +138,8 @@ namespace ClassJsonEditor.UserControls
                 if (Avalonia.Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {
                     var selectBox = new SelectListMsgBox() {Title = "Select Element Type..."};
-                    var selected = await selectBox.ShowListBox(desktop.MainWindow, types);
-                    var newObj = (selected as Type).ActivateInstance();
+                    var selected = await selectBox.ShowListBox(desktop.MainWindow, types) as Type;
+                    var newObj = Activator.CreateInstance(selected);
 
                     // Doing some reflection magic, to be able to call Add (ICollection doesnt implement Add, yet ICollection<T> does, that why I dont just do `as ICollection` cast
                     collectionItem.Type.GetMethod("Add").Invoke(collectionItem.Objecto, new[] {newObj});

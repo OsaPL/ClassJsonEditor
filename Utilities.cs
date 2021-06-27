@@ -522,6 +522,25 @@ namespace MercsCodeBaseTest
 
             return serialized;
         }
+        
+        // Not connected overload, to mitigate change of behaviours
+        public static object Deserialize(string ourobject, Type type)
+        {
+            object serialized;
+
+            try
+            {
+                serialized = JsonConvert.DeserializeObject(ourobject, type);
+            }
+            //TODO! Specify the exception
+            catch (Exception e)
+            {
+                serialized = null;
+            }
+            
+
+            return serialized;
+        }
     }
 
     public static class Logger
