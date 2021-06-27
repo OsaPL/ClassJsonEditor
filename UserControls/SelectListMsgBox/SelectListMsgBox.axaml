@@ -4,7 +4,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="ClassJsonEditor.UserControls.SelectListMsgBox"
-        SizeToContent="WidthAndHeight">
+        SizeToContent="WidthAndHeight"
+        ShowInTaskbar="False"
+        SystemDecorations="BorderOnly">
         
         <ListBox Items="{Binding .}" SelectionChanged="SelectingItemsControl_OnSelectionChanged">
                 <ListBox.ItemTemplate>

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 
 namespace ClassJsonEditor.UserControls
@@ -24,6 +25,12 @@ namespace ClassJsonEditor.UserControls
         }
 
         private TaskCompletionSource<object> _tcs;
+
+        public Task<object> ShowListBox(Window parent, IEnumerable<object> list, PixelPoint point)
+        {
+            Position = point;
+            return ShowListBox(parent, list);
+        }
 
         public Task<object> ShowListBox(Window parent, IEnumerable<object> list)
         {
