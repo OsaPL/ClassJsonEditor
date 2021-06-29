@@ -15,4 +15,9 @@
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.6" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Reflection.TypeLoader, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>System.Reflection.TypeLoader.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>

@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Dynamic;
 using System.Globalization;
 using System.Linq;
@@ -300,17 +302,36 @@ namespace ClassJsonEditor.UserControls
             {
                 if (Items.Count > 0)
                 {
-                    foreach (ClassViewTreeItem item in Items)
+                    if (IsCollection)
                     {
-                        if (item.IsPrimitive)
+                        foreach (ClassViewTreeItem item in Items)
                         {
-                            AddProperty(expando, item.FieldName, item.Objecto);
+                            //ICollection<T> is guaranteed to have Add implemented, so I take easy way of just calling it the dirty way
+                            if (item.IsPrimitive)
+                            {
+                                Type.GetMethod("Add").Invoke(Objecto, new[] {item.Objecto});
+                            }
+                            else
+                            {
+                                // Concrete type is needed for call, GetAsObject is called
+                                Type.GetMethod("Add").Invoke(Objecto, new[] {item.GetAsObject()});
+                            }
                         }
-                        else
+                    }
+                    else
+                    {
+                        foreach (ClassViewTreeItem item in Items)
                         {
-                            var newExpando = new ExpandoObject();
-                            AddProperty(expando, item.FieldName, newExpando);
-                            item.PrepareGetAsObject(ref newExpando);
+                            if (item.IsPrimitive)
+                            {
+                                AddProperty(expando, item.FieldName, item.Objecto);
+                            }
+                            else
+                            {
+                                var newExpando = new ExpandoObject();
+                                AddProperty(expando, item.FieldName, newExpando);
+                                item.PrepareGetAsObject(ref newExpando);
+                            }
                         }
                     }
                 }
@@ -404,6 +425,52 @@ namespace ClassJsonEditor.UserControls
             {
                 return Activator.CreateInstance<T>();
             }
+        }
+
+        public static TObject ToObject<TObject>(this IDictionary<string, object> someSource,
+            BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public)
+            where TObject : class, new()
+        {
+            Contract.Requires(someSource != null);
+            TObject targetObject = new TObject();
+            Type targetObjectType = typeof(TObject);
+
+            // Go through all bound target object type properties...
+            foreach (PropertyInfo property in
+                targetObjectType.GetProperties(bindingFlags))
+            {
+                // ...and check that both the target type property name and its type matches
+                // its counterpart in the ExpandoObject
+                if (someSource.ContainsKey(property.Name)
+                    && property.PropertyType == someSource[property.Name].GetType())
+                {
+                    property.SetValue(targetObject, someSource[property.Name]);
+                }
+            }
+
+            return targetObject;
+        }
+        
+        public static object ToObject(this IDictionary<string, object> someSource, Type targetObjectType,
+            BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public)
+        {
+            Contract.Requires(someSource != null);
+            object targetObject = targetObjectType.ActivateInstance();
+            
+            // Go through all bound target object type properties...
+            foreach (PropertyInfo property in
+                targetObjectType.GetProperties(bindingFlags))
+            {
+                // ...and check that both the target type property name and its type matches
+                // its counterpart in the ExpandoObject
+                if (someSource.ContainsKey(property.Name)
+                    && property.PropertyType == someSource[property.Name].GetType())
+                {
+                    property.SetValue(targetObject, someSource[property.Name]);
+                }
+            }
+
+            return targetObject;
         }
     }
 }

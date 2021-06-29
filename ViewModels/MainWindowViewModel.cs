@@ -32,14 +32,35 @@ namespace ClassJsonEditor.ViewModels
                 @"C:\Users\Osa-Master\RiderProjects\ClassJsonEditor\DummyLib.dll"
             };
 
-            // LoadFrom also loads all dependecies
-            var DLL = Assembly.LoadFrom(list[1]);
+            List<ClassRepresentation> classes = new List<ClassRepresentation>();
 
-            // ReflectionOnlyLoadFrom load an assembly into the reflection-only context. Assemblies loaded into this context can be examined but not executed!
-            // Doesnt work in .net core, and System.Reflection.TypeLoader/Metadata is in development hell it seems, bummer
-            //var DLL = Assembly.ReflectionOnlyLoadFrom(list[1]);
+            foreach (string path in list)
+            {
+                Assembly dll;
+                try
+                {
+                    // LoadFrom also loads all dependencies, probably not safe, but is good for now
+                    dll = Assembly.LoadFrom(path);
+                    classes.AddRange(dll.GetExportedTypes().Select(x => new ClassRepresentation(x)));
+                }
+                catch (Exception e)
+                {
+                    // When we catch an exception, probably we need to load it shallowly
+                    
+                    // ReflectionOnlyLoadFrom load an assembly into the reflection-only context. Assemblies loaded into this context can be examined but not executed!
+                    // Doesnt work in .net core, and System.Reflection.TypeLoader/Metadata is in development hell it seems, bummer
+                    //var DLL = Assembly.ReflectionOnlyLoadFrom(list[1]);
 
-            return DLL.GetExportedTypes().Select(x=> new ClassRepresentation(){Type = x});
+                    // Using the TypeLoader from old experimental corefx repo.
+                    // TODO! Include the code for this and use reference, when sln files start working again.
+                    // THis allows is to use loaded types, without actually trying to instantiate it. This will make loading almost any dll possible, but only as models only (no actual functionality will be available)
+                    // Cool, still requires tho separate reflection stuff to actually make use of that reflecion info we get, since CreateInstance and other built in ways WILL NOT WORK.
+                    var loader = new System.Reflection.TypeLoader();
+                    dll = loader.LoadFromAssemblyPath(path);
+                    classes.AddRange(dll.GetExportedTypes().Select(x => new ClassRepresentation(x, true)));
+                }
+            }
+            return classes;
         }
 
         public ClassListViewModel List { get; }
