@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 
 namespace MercsCodeBaseTest
 {
+    // TODO! FOR THE LOVE OF GOD, if a method returns smth, dont do an extension one! Have to fix them
     public static class Utilities
     {
         /// <summary>

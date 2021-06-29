@@ -59,6 +59,14 @@ namespace ClassJsonEditor.UserControls
             get => _type;
             set { this.RaiseAndSetIfChanged(ref _type, value); }
         }
+        
+        private bool _reflectionOnlyMode;
+
+        public bool ReflectionOnlyMode
+        {
+            get => _reflectionOnlyMode;
+            set { this.RaiseAndSetIfChanged(ref _reflectionOnlyMode, value); }
+        }
 
         private object _objecto;
 
@@ -378,9 +386,50 @@ namespace ClassJsonEditor.UserControls
             }
         }
     }
+    
+    // TODO! Move this to utilities
 
     public static class ReflectionsHelper
     {
+        public static bool first = false; 
+        // This is used for shallow activation, when only reflection is available ie. ReflectionMode is true
+        public static object ActivateOnlyProperties(this Type type)
+        {
+            var expando = new ExpandoObject();
+            
+            List<string> fieldnames = type
+                .GetFields()
+                .Select(field => field.Name)
+                .ToList();
+            List<Type> fieldTypes = type
+                .GetFields()
+                .Select(field => field.FieldType)
+                .ToList();
+
+            // This is mostly a copy paste from Parse()
+            using (var e2 = fieldnames.GetEnumerator())
+            using (var e3 = fieldTypes.GetEnumerator())
+            {
+                while (e2.MoveNext() && e3.MoveNext())
+                {
+                    var fieldName = e2.Current;
+                    var fieldType = e3.Current;
+
+                    if (TypeChecker.IsReallyPrimitive(fieldType))
+                    {
+                        Utilities.AddProperty(expando, fieldName, ActivateInstance(fieldType));
+                    }
+                    else
+                    {
+                        var obj = fieldType.ActivateOnlyProperties();
+                        Utilities.AddProperty(expando, fieldName, obj);
+                    }
+                }
+            }
+
+            return expando;
+        }
+        
         public static IEnumerable<Type> GetCompatibleTypes(Type type)
         {
             var types = Assembly.GetAssembly(type).GetLoadableTypes().Where(x => x.IsAssignableTo(type));

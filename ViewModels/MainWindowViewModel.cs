@@ -21,7 +21,7 @@ namespace ClassJsonEditor.ViewModels
             
             var loaded = LoadClasses(null);
            
-            List = new ClassListViewModel(loaded, representation =>  Classes.AddClass(representation.Type));
+            List = new ClassListViewModel(loaded, representation =>  Classes.AddClass(representation));
         }
         
         private IEnumerable<ClassRepresentation> LoadClasses(string[] paths)
@@ -51,16 +51,14 @@ namespace ClassJsonEditor.ViewModels
                     // Doesnt work in .net core, and System.Reflection.TypeLoader/Metadata is in development hell it seems, bummer
                     //var DLL = Assembly.ReflectionOnlyLoadFrom(list[1]);
 
-                    // Using the TypeLoader from old experimental corefx repo.
-                    // TODO! Include the code for this and use reference, when sln files start working again.
-                    // THis allows is to use loaded types, without actually trying to instantiate it. This will make loading almost any dll possible, but only as models only (no actual functionality will be available)
-                    // Cool, still requires tho separate reflection stuff to actually make use of that reflecion info we get, since CreateInstance and other built in ways WILL NOT WORK.
-                    var loader = new System.Reflection.TypeLoader();
-                    dll = loader.LoadFromAssemblyPath(path);
+                    var resolver = new PathAssemblyResolver(new []{path});
+                    var mlc = new MetadataLoadContext(resolver);
+                    dll = mlc.LoadFromAssemblyPath(path);
+                    
                     classes.AddRange(dll.GetExportedTypes().Select(x => new ClassRepresentation(x, true)));
                 }
             }
-            return classes;
+            return classes.OrderBy(x=>x.Type.ToString());
         }
 
         public ClassListViewModel List { get; }

@@ -11,6 +11,8 @@
                 <DataTemplate DataType="{x:Type models:ClassRepresentation}">
                     <DockPanel >
                         <TextBlock Margin="4"
+                                   Text="/R!" IsVisible="{Binding IsReflectionOnly}"/>
+                        <TextBlock Margin="4"
                                    Text="{Binding Type}"/>
                     </DockPanel>
                 </DataTemplate>

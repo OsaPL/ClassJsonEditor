@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Reflection;
+using ClassJsonEditor.Models;
 using ClassJsonEditor.UserControls;
 using MercsCodeBaseTest;
 using ReactiveUI;
@@ -18,19 +20,31 @@ namespace ClassJsonEditor.ViewModels
         
         private readonly Action<object> _onSelectCallback;
 
-        public void AddClass(Type type)
+        public void AddClass(ClassRepresentation classRepresentation)
         {
             //Add class to the list
             ClassViewTreeItem item;
             try
             {
-                var obj = Activator.CreateInstance(type);
-                item = new ClassViewTreeItem(type.FullName, type, obj);
+                object obj;
+                if (classRepresentation.IsReflectionOnly)
+                {
+                    ReflectionsHelper.first = true;
+                    obj = classRepresentation.Type.ActivateOnlyProperties();   
+                    item = new ClassViewTreeItem(classRepresentation.Type.FullName, classRepresentation.Type, obj);
+                    item.ReflectionOnlyMode = true;
+                }
+                else
+                {
+                    obj = Activator.CreateInstance(classRepresentation.Type);
+                }
+                item = new ClassViewTreeItem(classRepresentation.Type.FullName, classRepresentation.Type, obj);
             }
-            catch (Exception e)
+            // This will catch all ctor problems, means that probably we should load this with ReflectionMode
+            catch (TargetInvocationException e)
             {
-                //item = new ClassViewTreeItem(type.FullName, type, null);
-                Console.WriteLine(e);
+                classRepresentation.IsReflectionOnly = true;
+                AddClass(classRepresentation);
                 return;
             }
             item.Parse();
