@@ -133,7 +133,7 @@ namespace ClassJsonEditor.UserControls
             else if (collectionItem.IsCollection)
             {
                 //TODO: Find out a better way, Im assuming all collections will have their 1st generic argument the type of the items
-                Type argument = collectionItem.Type.GetGenericArguments()[1];
+                Type argument = collectionItem.Type.GetGenericArguments()[0];
                 var types = ReflectionsHelper.GetCompatibleTypes(argument);
                 if (Avalonia.Application.Current.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {

@@ -13,7 +13,7 @@ namespace ClassJsonEditor.Models
         public bool IsReflectionOnly { get; set; }
         public override string ToString()
         {
-            return Type.ToString();
+            return Type.Name;
         }
     }
 }

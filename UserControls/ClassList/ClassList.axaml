@@ -10,8 +10,12 @@
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type models:ClassRepresentation}">
                     <DockPanel >
+                        <TextBlock Name="NameTextBlock" Margin="4"
+                                   Text="{Binding Type.Name}"/>
                         <TextBlock Margin="4"
-                                   Text="{Binding Type}"/>
+                                   Text="*" IsVisible="{Binding IsReflectionOnly}" />
+                        <TextBlock Margin="4"
+                                   Text="{Binding Type.Namespace}" FontSize="9" />
                     </DockPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

@@ -42,6 +42,7 @@ namespace ClassJsonEditor.ViewModels
                     // LoadFrom also loads all dependencies, probably not safe, but is good for now
                     dll = Assembly.LoadFrom(path);
                     classes.AddRange(dll.GetExportedTypes().Select(x => new ClassRepresentation(x)));
+                    classes.Sort((x, y) => string.Compare(x.Type.Name, y.Type.Name));
                 }
                 catch (Exception e)
                 {
